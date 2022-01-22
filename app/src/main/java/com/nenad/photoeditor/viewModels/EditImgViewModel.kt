@@ -38,24 +38,7 @@ class EditImgViewModel(private val repository: EditRepository) : ViewModel() {
         }
 
     }
-    fun prepareImagePreviewCamera(imageUri: Uri?) {
-        Coroutines.inputOutput {
-            runCatching {
-                emitImgPreviewState(isLoading = true)
-                repository.prepareImgPrev(imageUri!!)
-            }.onSuccess { bitmap ->
-                if (bitmap != null) {
-                    emitImgPreviewState(bitmap = bitmap)
-                } else {
-                    emitImgPreviewState(error = "Unable to perform operation")
-                }
 
-            }.onFailure {
-                emitImgPreviewState(error = it.message.toString())
-            }
-        }
-
-    }
 
 
 
