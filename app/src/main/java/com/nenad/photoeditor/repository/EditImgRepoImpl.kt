@@ -32,8 +32,7 @@ class EditImgRepoImpl(private val context: Context):EditRepository {
         }
         val imageFilters: ArrayList<ImgFilter> = ArrayList()
 
-        //filtersStart
-        // Normal
+        //region::FiltersReviews
         GPUImageFilter().also { filter ->
             gpuImage.setFilter(filter)
             imageFilters.add(
@@ -422,7 +421,7 @@ class EditImgRepoImpl(private val context: Context):EditRepository {
         }
 
 
-        //filtersEnd
+        //endregion
 
         return imageFilters
     }
@@ -449,6 +448,7 @@ class EditImgRepoImpl(private val context: Context):EditRepository {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, this)
             flush()
             close()
+
         }
     }
 

@@ -120,11 +120,11 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
                 mBinding.imgDone.visibility = View.VISIBLE
                 mBinding.savingImgProgress.visibility = View.GONE
             }
-            savedFilterImageDataState.uri?.let {
+            savedFilterImageDataState.uri?.let { savedImageUri ->
                 Intent(
                     applicationContext,
                     FilteredImageActivity::class.java).also { filteredImgIntent ->
-                    filteredImgIntent.putExtra(KEY_FILTERED_IMAGE_URI,it)
+                    filteredImgIntent.putExtra(KEY_FILTERED_IMAGE_URI,savedImageUri)
                     startActivity(filteredImgIntent)
 
                 }
