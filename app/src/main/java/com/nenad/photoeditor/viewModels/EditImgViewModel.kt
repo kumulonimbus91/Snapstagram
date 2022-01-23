@@ -14,8 +14,6 @@ class EditImgViewModel(private val repository: EditRepository) : ViewModel() {
     //region::ImageReviews
 
 
-
-
     private val imagePreviewDataState = MutableLiveData<ImagePreviewDataState>()
     val imgPreviewUiState: LiveData<ImagePreviewDataState> get() = imagePreviewDataState
 
@@ -111,6 +109,45 @@ class EditImgViewModel(private val repository: EditRepository) : ViewModel() {
 
     )
 
+    //endregion
+
+    //region Save Images
+
+
+
+
+    private val savedFilterImageDataState = MutableLiveData<SavedFilterImageDataState>()
+
+    val saveFilteredImageUiState: LiveData<SavedFilterImageDataState> get() = savedFilterImageDataState
+
+    fun saveFilteredImg(filteredBitmap: Bitmap) {
+        Coroutines.inputOutput {
+            runCatching {
+                emitSavedState(isLoading = true)
+                repository.saveFilteredImage(filteredBitmap)
+            }.onSuccess { savedImgUri ->
+                emitSavedState(uri = savedImgUri)
+
+            }.onFailure { error ->
+               emitSavedState(error = error.message.toString())
+            }
+        }
+
+    }
+
+    private fun emitSavedState(isLoading: Boolean = false,
+    uri: Uri? = null,
+    error: String? = null) {
+        val dataState = SavedFilterImageDataState(isLoading, uri, error)
+        savedFilterImageDataState.postValue(dataState)
+
+    }
+
+
+
+    data class SavedFilterImageDataState(val isLoading: Boolean,
+                                         val uri:Uri?,
+                                         val error: String?)
     //endregion
 }
 

@@ -4,14 +4,19 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Environment
+import androidx.core.content.FileProvider
 import com.nenad.photoeditor.data.ImgFilter
 import jp.co.cyberagent.android.gpuimage.GPUImage
 import jp.co.cyberagent.android.gpuimage.filter.*
+import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
+import java.lang.Exception
 
 class EditImgRepoImpl(private val context: Context):EditRepository {
     override suspend fun prepareImgPrev(imageUri: Uri): Bitmap? {
-        getInputStream(imageUri).let { inputStream ->
+        getInputStream(imageUri)?.let { inputStream ->
             val oriBitMap = BitmapFactory.decodeStream(inputStream)
             val width = context.resources.displayMetrics.widthPixels
             val height = ((oriBitMap.height * width)/oriBitMap.width)
@@ -421,6 +426,34 @@ class EditImgRepoImpl(private val context: Context):EditRepository {
 
         return imageFilters
     }
+
+    override suspend fun saveFilteredImage(filteredBitmap: Bitmap): Uri? {
+        return try {
+            val mediaStorageDirectory = File (
+                context.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                "Saved Image"
+                    )
+            if (!mediaStorageDirectory.exists()){
+                mediaStorageDirectory.mkdirs()
+            }
+            val fileName = "IMG_${System.currentTimeMillis()}.jpg"
+            val file = File (mediaStorageDirectory, fileName)
+            saveFile(file, filteredBitmap)
+            FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+        } catch (e: Exception) {
+            null
+        }
+    }
+    private fun saveFile(file: File, bitmap: Bitmap) {
+        with(FileOutputStream(file)) {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, this)
+            flush()
+            close()
+        }
+    }
+
+
+
 
     private fun getInputStream(uri: Uri): InputStream? {
         return context.contentResolver.openInputStream(uri)

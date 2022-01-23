@@ -38,6 +38,11 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, EditActivity::class.java)
             startActivity(intent)
         }
+        mBinding.btnSave.setOnClickListener {
+           Intent(applicationContext, SavedImgActivity::class.java).also {
+               startActivity(it)
+           }
+        }
     }
 
 

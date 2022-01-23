@@ -1,35 +1,34 @@
 package com.nenad.photoeditor.activities
 
-import android.Manifest
-import android.content.Context
-import android.graphics.BitmapFactory
-import android.net.Uri
+import android.content.Intent
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.view.View
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.MutableLiveData
 import com.nenad.photoeditor.data.ImgFilter
 import com.nenad.photoeditor.databinding.ActivityEditBinding
 import com.nenad.photoeditor.listeners.ImgFilterListener
 import com.nenad.photoeditor.rvadapters.FiltersAdapter
-import com.nenad.photoeditor.utils.Coroutines
 import com.nenad.photoeditor.utils.displayToast
 import com.nenad.photoeditor.utils.show
 import com.nenad.photoeditor.viewModels.EditImgViewModel
-import com.swein.easypermissionmanager.EasyPermissionManager
 import jp.co.cyberagent.android.gpuimage.GPUImage
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.io.ByteArrayOutputStream
-import java.io.File
 import android.graphics.Bitmap as Bitmap1
 
 
 class EditActivity : AppCompatActivity(), ImgFilterListener {
+
+
+    companion object {
+        const val KEY_FILTERED_IMAGE_URI = "filtered"
+    }
+
+
+
+
     private lateinit var mBinding: ActivityEditBinding
 
     private val viewModel: EditImgViewModel by viewModel()
@@ -112,6 +111,30 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
         filteredBM.observe(this, {
             mBinding.imgPreview.setImageBitmap(it)
         })
+        viewModel.saveFilteredImageUiState.observe(this, {
+            val savedFilterImageDataState = it ?: return@observe
+            if (savedFilterImageDataState.isLoading) {
+                mBinding.imgDone.visibility = View.GONE
+                mBinding.savingImgProgress.visibility = View.VISIBLE
+            } else {
+                mBinding.imgDone.visibility = View.VISIBLE
+                mBinding.savingImgProgress.visibility = View.GONE
+            }
+            savedFilterImageDataState.uri?.let {
+                Intent(
+                    applicationContext,
+                    FilteredImageActivity::class.java).also { filteredImgIntent ->
+                    filteredImgIntent.putExtra(KEY_FILTERED_IMAGE_URI,it)
+                    startActivity(filteredImgIntent)
+
+                }
+            } ?: kotlin.run {
+                savedFilterImageDataState.error?.let { error ->
+                    displayToast(error)
+
+                }
+            }
+        })
     }
 
     private fun prepareImgPreview() {
@@ -145,6 +168,23 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
         mBinding.backButton.setOnClickListener {
             onBackPressed()
         }
+        /*
+        The following code will display original image on long press so we can see the difference between original and edited img
+         */
+        mBinding.imgPreview.setOnLongClickListener {
+            mBinding.imgPreview.setImageBitmap(originalBM)
+            return@setOnLongClickListener false
+        }
+
+        mBinding.imgPreview.setOnClickListener {
+            mBinding.imgPreview.setImageBitmap(filteredBM.value)
+        }
+        mBinding.imgDone.setOnClickListener {
+            filteredBM.value?.let {
+                viewModel.saveFilteredImg(it)
+            }
+        }
+
     }
 
 

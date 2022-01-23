@@ -9,4 +9,6 @@ interface EditRepository {
     suspend fun prepareImgPrev(imageUri: Uri): Bitmap?
 
     suspend fun getImgFilter(image: Bitmap): List<ImgFilter>
+
+    suspend fun saveFilteredImage(filteredBitmap: Bitmap): Uri?
 }
