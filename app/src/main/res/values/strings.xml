@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">PhotoEditor</string>
+    <string name="app_name">Snapstagram</string>
     <string name="saved_images">Saved Images</string>
     <string name="edit_new">Edit New</string>
-    <string name="lets_create">Let\s create!</string>
+    <string name="lets_create">Filter editor</string>
     <string name="snapstagram">Snapstagram</string>
     <string name="apply_filter">Apply Filter</string>
 

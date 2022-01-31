@@ -1,8 +1,20 @@
 package com.nenad.photoeditor.activities
 
+import android.Manifest
+import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
+import android.media.ExifInterface.*
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -14,8 +26,11 @@ import com.nenad.photoeditor.rvadapters.FiltersAdapter
 import com.nenad.photoeditor.utils.displayToast
 import com.nenad.photoeditor.utils.show
 import com.nenad.photoeditor.viewModels.EditImgViewModel
+import com.swein.easypermissionmanager.EasyPermissionManager
 import jp.co.cyberagent.android.gpuimage.GPUImage
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.*
+import java.util.*
 import android.graphics.Bitmap as Bitmap1
 
 
@@ -24,6 +39,10 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
 
     companion object {
         const val KEY_FILTERED_IMAGE_URI = "filtered"
+        private const val STORAGE_PERMISSION_CODE =
+            1 // its about which permission value is, could be camera permission, location per.etc.
+        private const val GALLERY = 2
+        val IMAGE_CAPTURE_CODE = 654
     }
 
 
@@ -31,14 +50,23 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
 
     private lateinit var mBinding: ActivityEditBinding
 
+    private val MAX_HEIGHT = 1024
+    private val MAX_WIDTH = 1024
+
     private val viewModel: EditImgViewModel by viewModel()
 
     private lateinit var gpuImg: GPUImage
 
-    private lateinit  var originalBM: Bitmap1
+    private var cameraUri: Uri? = null
+
+
+
+    private val easyPermissionManager = EasyPermissionManager(this)
+
+
+
+    private lateinit var originalBM: Bitmap1
     private var filteredBM: MutableLiveData<Bitmap1> = MutableLiveData<Bitmap1>()
-
-
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,6 +80,8 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
         listeners()
         prepareImgPreview()
         observers()
+
+
 
 
 
@@ -123,8 +153,9 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
             savedFilterImageDataState.uri?.let { savedImageUri ->
                 Intent(
                     applicationContext,
-                    FilteredImageActivity::class.java).also { filteredImgIntent ->
-                    filteredImgIntent.putExtra(KEY_FILTERED_IMAGE_URI,savedImageUri)
+                    FilteredImageActivity::class.java
+                ).also { filteredImgIntent ->
+                    filteredImgIntent.putExtra(KEY_FILTERED_IMAGE_URI, savedImageUri)
                     startActivity(filteredImgIntent)
 
                 }
@@ -148,6 +179,7 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
         mBinding.imgGallery.setOnClickListener {
             loadImg.launch("image/*")
         }
+
 
 
 
@@ -184,8 +216,66 @@ class EditActivity : AppCompatActivity(), ImgFilterListener {
                 viewModel.saveFilteredImg(it)
             }
         }
+        mBinding.imgCam.setOnClickListener {
+            openCamera()
+        }
+
+
+
+
 
     }
+
+    private fun openCamera() {
+
+
+        easyPermissionManager.requestPermission(
+            "permission",
+            "permissions are necessary", "setting",
+            arrayOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        ) {
+            val values = ContentValues()
+            values.put(MediaStore.Images.Media.TITLE, "New Picture")
+            values.put(MediaStore.Images.Media.DESCRIPTION, "From the Camera")
+            cameraUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            val cameraIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraUri)
+            startActivityForResult(cameraIntent, IMAGE_CAPTURE_CODE)
+
+        }
+
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == IMAGE_CAPTURE_CODE && resultCode == Activity.RESULT_OK) {
+
+            viewModel.prepareImagePreview(cameraUri!!)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        }
+    }
+
+
+
+
 
 
 
